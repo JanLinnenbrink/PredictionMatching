@@ -39,7 +39,7 @@ plot.twcv <- function(x, ...) {
     )
 
   # stop if weighted_error not supplied
-  if (is.null(x$weighted_error)) {
+  if (is.na(x$weighted_error)) {
     return(calibration_plot)
   }
 
