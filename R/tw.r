@@ -4,6 +4,8 @@
 #' @param modeldomain SpatRaster containing the predictors. Not needed when predpoints are supplied.
 #' @param predpoints data.frame or sf object containing the predictor values at the prediction points.
 #' Only needed if no modeldomain is supplied.
+#' @param pointwise_error vector of the error estimates for every training points (aligned with the training points). Optional.
+#' If supplied, the weights will be applied to the pointwise error, and an weighted error will be returned.
 #' @param samplesize numeric. How many points in the modeldomain should be sampled as prediction points?
 #' Only required if modeldomain is used instead of predpoints.
 #' @param sampling character. How to draw prediction points from the modeldomain? See `sf::st_sample`.
@@ -14,10 +16,11 @@
 #' @return A list with elements:
 #'   \describe{
 #'     \item{weights}{Named list of weight object for TWCV.}
+#'     \item{weighted_error}{vector of the weighted error. Only if pointwise_error is supplied.}
 #'     \item{unsupported_flag}{1 if some quintiles are not supported by the training data. 0 otherwise.}
 #'     \item{unsupported_vars}{Vector containing the names of variables with quintiles not supported by the training data.}
-#'     \item{training_margins}{data.frame containing the discretized predictors for the training data.}
-#'     \item{prediction_margins}{data.frame containing the discretized predictors for the prediction data}
+#'     \item{training_bal}{data.frame containing the discretized predictors for the training data.}
+#'     \item{prediction_margins}{data.frame containing the frequency of the discretized predictors for the prediction data}
 #'   }
 #'
 #'
@@ -27,6 +30,7 @@ calculate_weights <- function(
   tpoints,
   modeldomain = NULL,
   predpoints = NULL,
+  pointwise_error = NULL,
   samplesize = 1000,
   sampling = "regular",
   balance_by = 0.2,
@@ -40,7 +44,11 @@ calculate_weights <- function(
 
   # Sample prediction points if not supplied
   if (is.null(predpoints) & !is.null(modeldomain)) {
-    predpoints <- .generate_predpoints(modeldomain = modeldomain)
+    predpoints <- .generate_predpoints(
+      modeldomain = modeldomain,
+      samplesize = samplesize,
+      sampling = sampling
+    )
   }
 
   # Standardize the inputs (prediction points and training points data frames)
@@ -56,9 +64,10 @@ calculate_weights <- function(
     pred_dat <- predpoints
   }
 
+  balancing_vars <- names(pred_dat)
+
   train_dat$id <- seq_len(nrow(train_dat))
   pred_dat$id <- seq_len(nrow(pred_dat))
-  balancing_vars <- names(pred_dat)
 
   # Check if the names of the training and prediction data match
   if (!setequal(names(train_dat), names(pred_dat))) {
@@ -107,7 +116,7 @@ calculate_weights <- function(
   tw$weights <- (1 - shrink_lambda) * tw$weights_raw + shrink_lambda
 
   # Check for any unsupported quintiles and issue a warning
-  support_check <- .check_balance_support(balance_df, prediction_margins)
+  support_check <- .check_balance_support(train_dat_bal_df, prediction_margins)
   if (any(support_check$unsupported)) {
     unsupported_vars <- unique(support_check[
       support_check$unsupported == TRUE,
@@ -125,11 +134,19 @@ calculate_weights <- function(
     unsupported_flag <- 0
   }
 
+  # Calculate the weighted pointwise error if supplied
+  if (is.null(pointwise_error)) {
+    weighted_error <- NA
+  } else {
+    weighted_error <- pointwise_error * tw$weights
+  }
+
   res <- list(
     weights = tw,
+    weighted_error = weighted_error,
     unsupported_flag = unsupported_flag,
     unsupported_vars = unsupported_vars,
-    training_margins = train_dat_bal_df,
+    training_bal = train_dat_bal_df,
     prediction_margins = prediction_margins
   )
   class(res) <- "twcv"
@@ -143,7 +160,7 @@ calculate_weights <- function(
 #'
 #' @return Named list of empirical target margins.
 #' @noRd
-.generate_predpoints <- function(modeldomain) {
+.generate_predpoints <- function(modeldomain, samplesize, sampling) {
   # Check modeldomain is indeed a sf/SpatRaster
   if (!any(c("SpatRaster") %in% class(modeldomain))) {
     stop("modeldomain must be a 'SpatRaster' object.")
