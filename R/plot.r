@@ -20,9 +20,9 @@ plot.twcv <- function(x, ...) {
   calibration_plot <- ggplot2::ggplot(
     cal,
     ggplot2::aes(
-      y = var,
-      x = abs(.data$target - .data$weighted),
-      fill = as.factor(level)
+      y = .data[["var"]],
+      x = abs(.data[["target"]] - .data[["weighted"]]),
+      fill = as.factor(.data[["level"]])
     )
   ) +
     ggplot2::geom_point(shape = 21, colour = "grey", size = 3) +
@@ -45,7 +45,10 @@ plot.twcv <- function(x, ...) {
 
   # plot weight vs loss (only if weighted_error is supplied)
   df <- data.frame(w = w, loss = x$weighted_error)
-  bias_plot <- ggplot2::ggplot(df, ggplot2::aes(.data$w, .data$loss)) +
+  bias_plot <- ggplot2::ggplot(
+    df,
+    ggplot2::aes(.data[["w"]], .data[["loss"]])
+  ) +
     ggplot2::geom_point(alpha = 0.6) +
     ggplot2::geom_smooth(
       method = "lm",

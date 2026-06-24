@@ -43,7 +43,8 @@
 #' terra::plot(vect(splotdata), add = T)
 #'
 #' pointwise_error <- rnorm(nrow(trainDat), 0, 1)
-#' w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp, pointwise_error = pointwise_error)
+#' w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp,
+#'                       pointwise_error = pointwise_error)
 #' plot(w)
 #' }
 #'
@@ -57,8 +58,7 @@ calculate_weights <- function(
   samplesize = 1000,
   sampling = "regular",
   balance_by = 0.2,
-  shrink_lambda = 0.2,
-  ...
+  shrink_lambda = 0.2
 ) {
   # Checks
   if (shrink_lambda < 0 || shrink_lambda > 1) {

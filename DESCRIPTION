@@ -13,3 +13,8 @@ BugReports: https://github.com/JanLinnenbrink/PredictionMatching/issues
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Imports: 
+    dplyr,
+    ggplot2,
+    sf,
+    terra
