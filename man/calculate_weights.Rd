@@ -51,3 +51,28 @@ A list with elements:
 \description{
 Prediction-domain adaptive weighting based on raking
 }
+\examples{
+\dontrun{
+library(sf)
+library(terra)
+library(ggplot2)
+library(CAST)
+
+data(splotdata)
+splotdata <- splotdata[splotdata$Country == "Chile",]
+
+predictors <- c("bio_1", "bio_4", "bio_5", "bio_6",
+               "bio_8", "bio_9", "bio_12", "bio_13",
+               "bio_14", "bio_15", "elev")
+
+trainDat <- sf::st_drop_geometry(splotdata)
+predictors_sp <- terra::rast(system.file("extdata", "predictors_chile.tif",package="CAST"))
+terra::plot(predictors_sp[["bio_1"]])
+terra::plot(vect(splotdata), add = T)
+
+pointwise_error <- rnorm(nrow(trainDat), 0, 1)
+w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp, pointwise_error = pointwise_error)
+plot(w)
+}
+
+}
