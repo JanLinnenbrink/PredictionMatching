@@ -2,3 +2,4 @@
 
 S3method(plot,twcv)
 export(calculate_weights)
+export(weighted_error_stats)

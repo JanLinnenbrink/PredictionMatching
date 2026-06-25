@@ -4,8 +4,6 @@
 #' @param modeldomain SpatRaster containing the predictors. Not needed when predpoints are supplied.
 #' @param predpoints data.frame or sf object containing the predictor values at the prediction points.
 #' Only needed if no modeldomain is supplied.
-#' @param pointwise_error vector of the error estimates for every training points (aligned with the training points). Optional.
-#' If supplied, the weights will be applied to the pointwise error, and an weighted error will be returned.
 #' @param samplesize numeric. How many points in the modeldomain should be sampled as prediction points?
 #' Only required if modeldomain is used instead of predpoints.
 #' @param sampling character. How to draw prediction points from the modeldomain? See `sf::st_sample`.
@@ -16,7 +14,6 @@
 #' @return A list with elements:
 #'   \describe{
 #'     \item{weights}{Named list of weight object for TWCV.}
-#'     \item{weighted_error}{vector of the weighted error. Only if pointwise_error is supplied.}
 #'     \item{unsupported_flag}{1 if some quintiles are not supported by the training data. 0 otherwise.}
 #'     \item{unsupported_vars}{Vector containing the names of variables with quintiles not supported by the training data.}
 #'     \item{training_bal}{data.frame containing the discretized predictors for the training data.}
@@ -42,9 +39,7 @@
 #' terra::plot(predictors_sp[["bio_1"]])
 #' terra::plot(vect(splotdata), add = T)
 #'
-#' pointwise_error <- rnorm(nrow(trainDat), 0, 1)
-#' w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp,
-#'                       pointwise_error = pointwise_error)
+#' w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp)
 #' plot(w)
 #' }
 #'
@@ -54,7 +49,6 @@ calculate_weights <- function(
   tpoints,
   modeldomain = NULL,
   predpoints = NULL,
-  pointwise_error = NULL,
   samplesize = 1000,
   sampling = "regular",
   balance_by = 0.2,
@@ -157,16 +151,8 @@ calculate_weights <- function(
     unsupported_flag <- 0
   }
 
-  # Calculate the weighted pointwise error if supplied
-  if (is.null(pointwise_error)) {
-    weighted_error <- NA
-  } else {
-    weighted_error <- pointwise_error * tw$weights
-  }
-
   res <- list(
     weights = tw,
-    weighted_error = weighted_error,
     unsupported_flag = unsupported_flag,
     unsupported_vars = unsupported_vars,
     training_bal = train_dat_bal_df,

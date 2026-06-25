@@ -5,10 +5,12 @@
 \alias{plot.twcv}
 \title{Plot the calibration results}
 \usage{
-\method{plot}{twcv}(x, ...)
+\method{plot}{twcv}(x, pointwise_error = NULL, ...)
 }
 \arguments{
 \item{x}{An object of type \emph{twcv}.}
+
+\item{pointwise_error}{vector of errors for each training point.}
 
 \item{...}{other arguments.}
 }

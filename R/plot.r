@@ -3,11 +3,12 @@
 #'
 #' @name plot
 #' @param x An object of type \emph{twcv}.
+#' @param pointwise_error vector of errors for each training point.
 #' @param ... other arguments.
 #' @author Jan Linnenbrink
 #'
 #' @export
-plot.twcv <- function(x, ...) {
+plot.twcv <- function(x, pointwise_error = NULL, ...) {
   w_list <- x$weights
   if (is.list(w_list[[1]])) {
     w <- w_list[[1]]$weights
@@ -38,13 +39,13 @@ plot.twcv <- function(x, ...) {
       panel.grid.minor = ggplot2::element_blank()
     )
 
-  # stop if weighted_error not supplied
-  if (is.na(x$weighted_error)) {
+  # stop if pointwise_error not supplied
+  if (is.null(pointwise_error)) {
     return(calibration_plot)
   }
 
-  # plot weight vs loss (only if weighted_error is supplied)
-  df <- data.frame(w = w, loss = x$weighted_error)
+  # plot weight vs loss (only if pointwise_error is supplied)
+  df <- data.frame(w = w, loss = pointwise_error)
   bias_plot <- ggplot2::ggplot(
     df,
     ggplot2::aes(.data[["w"]], .data[["loss"]])

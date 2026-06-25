@@ -8,7 +8,6 @@ calculate_weights(
   tpoints,
   modeldomain = NULL,
   predpoints = NULL,
-  pointwise_error = NULL,
   samplesize = 1000,
   sampling = "regular",
   balance_by = 0.2,
@@ -22,9 +21,6 @@ calculate_weights(
 
 \item{predpoints}{data.frame or sf object containing the predictor values at the prediction points.
 Only needed if no modeldomain is supplied.}
-
-\item{pointwise_error}{vector of the error estimates for every training points (aligned with the training points). Optional.
-If supplied, the weights will be applied to the pointwise error, and an weighted error will be returned.}
 
 \item{samplesize}{numeric. How many points in the modeldomain should be sampled as prediction points?
 Only required if modeldomain is used instead of predpoints.}
@@ -40,7 +36,6 @@ Only required if modeldomain is used instead of predpoints.}
 A list with elements:
 \describe{
 \item{weights}{Named list of weight object for TWCV.}
-\item{weighted_error}{vector of the weighted error. Only if pointwise_error is supplied.}
 \item{unsupported_flag}{1 if some quintiles are not supported by the training data. 0 otherwise.}
 \item{unsupported_vars}{Vector containing the names of variables with quintiles not supported by the training data.}
 \item{training_bal}{data.frame containing the discretized predictors for the training data.}
@@ -69,9 +64,7 @@ predictors_sp <- terra::rast(system.file("extdata", "predictors_chile.tif",packa
 terra::plot(predictors_sp[["bio_1"]])
 terra::plot(vect(splotdata), add = T)
 
-pointwise_error <- rnorm(nrow(trainDat), 0, 1)
-w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp,
-                      pointwise_error = pointwise_error)
+w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp)
 plot(w)
 }
 
