@@ -3,7 +3,11 @@
 #'
 #' @name plot
 #' @param x An object of type \emph{twcv}.
-#' @param pointwise_error vector of errors for each training point.
+#' @param pointwise_error Optional. Either a `pe` object (from
+#'   [calculate_pointwise_error()]) or a numeric vector of pointwise errors. If a
+#'   numeric vector is supplied, it is assumed to be aligned with the weights by
+#'   position. If a `pe` object is supplied, errors are aligned to the weights by
+#'   ID. If `NULL`, only the calibration plot is returned.
 #' @param ... other arguments.
 #' @author Jan Linnenbrink
 #'
@@ -44,8 +48,11 @@ plot.twcv <- function(x, pointwise_error = NULL, ...) {
     return(calibration_plot)
   }
 
-  # plot weight vs loss (only if pointwise_error is supplied)
-  df <- data.frame(w = w, loss = pointwise_error)
+  # --- Resolve pointwise_error into a numeric vector aligned with w ---
+  err <- .align_error_to_weights(pointwise_error, weight_ids = x$ids, w = w)
+
+  # plot weight vs loss
+  df <- data.frame(w = w, loss = abs(err))
   bias_plot <- ggplot2::ggplot(
     df,
     ggplot2::aes(.data[["w"]], .data[["loss"]])
@@ -59,7 +66,7 @@ plot.twcv <- function(x, pointwise_error = NULL, ...) {
     ) +
     ggplot2::labs(
       x = "Weight",
-      y = paste0("Pointwise loss (", "squared error", ")"),
+      y = "Pointwise loss (absolute error)",
       title = "B) Weight vs. loss"
     ) +
     ggplot2::theme_bw() +
@@ -67,7 +74,50 @@ plot.twcv <- function(x, pointwise_error = NULL, ...) {
       aspect.ratio = 0.8,
       panel.grid.minor = ggplot2::element_blank()
     )
+
   return(list(calibration_plot, bias_plot))
+}
+
+#' Align a pointwise-error input to a weight vector
+#'
+#' Accepts either a `pe` object (data frame with `id`/`error`) or a plain
+#' numeric vector, and returns a numeric error vector aligned with the weights.
+#'
+#' @param pointwise_error A `pe` object or numeric vector.
+#' @param weight_ids IDs corresponding to the weights (e.g. `x$ids`).
+#' @param w The weight vector (used for length checks).
+#'
+#' @return Numeric vector of errors aligned with `w`.
+#' @keywords internal
+#' @noRd
+.align_error_to_weights <- function(pointwise_error, weight_ids, w) {
+  # pe object / data frame -> align by ID
+  if (inherits(pointwise_error, "pe") || is.data.frame(pointwise_error)) {
+    if (!all(c("id", "error") %in% names(pointwise_error))) {
+      stop("A 'pe' object must contain 'id' and 'error' columns.")
+    }
+    error_ids <- pointwise_error$id
+    err <- pointwise_error$error
+
+    if (is.null(weight_ids)) {
+      stop("No weight IDs available; cannot align a 'pe' object by ID.")
+    }
+
+    idx <- match(weight_ids, error_ids)
+    if (anyNA(idx)) {
+      stop("Some weight IDs were not found in the error IDs; cannot align.")
+    }
+    return(err[idx])
+  }
+
+  # plain numeric vector -> positional matching
+  if (!is.numeric(pointwise_error)) {
+    stop("`pointwise_error` must be a 'pe' object or a numeric vector.")
+  }
+  if (length(pointwise_error) != length(w)) {
+    stop("Length of `pointwise_error` doesn't match the number of weights.")
+  }
+  pointwise_error
 }
 
 #' @keywords internal

@@ -10,7 +10,11 @@
 \arguments{
 \item{x}{An object of type \emph{twcv}.}
 
-\item{pointwise_error}{vector of errors for each training point.}
+\item{pointwise_error}{Optional. Either a \code{pe} object (from
+\code{\link[=calculate_pointwise_error]{calculate_pointwise_error()}}) or a numeric vector of pointwise errors. If a
+numeric vector is supplied, it is assumed to be aligned with the weights by
+position. If a \code{pe} object is supplied, errors are aligned to the weights by
+ID. If \code{NULL}, only the calibration plot is returned.}
 
 \item{...}{other arguments.}
 }

@@ -36,6 +36,7 @@ Only required if modeldomain is used instead of predpoints.}
 A list with elements:
 \describe{
 \item{weights}{Named list of weight object for TWCV.}
+\item{ids}{Vector of ids for the training points, useful for aligning weights with pointwise errors in weighted_error_stats.}
 \item{unsupported_flag}{1 if some quintiles are not supported by the training data. 0 otherwise.}
 \item{unsupported_vars}{Vector containing the names of variables with quintiles not supported by the training data.}
 \item{training_bal}{data.frame containing the discretized predictors for the training data.}

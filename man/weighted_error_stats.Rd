@@ -9,8 +9,12 @@ weighted_error_stats(weights, pointwise_error)
 \arguments{
 \item{weights}{A \code{twcv} object, or a numeric vector of weights.}
 
-\item{pointwise_error}{A vector of the error for each training point based on
-cross-validation (obs - pred).}
+\item{pointwise_error}{Either a \code{pe} object (from
+\code{\link[=calculate_pointwise_error]{calculate_pointwise_error()}}, i.e. a data frame with \code{id} and \code{error}
+columns) or a numeric vector of pointwise errors (obs - pred). When a \code{pe}
+object is supplied, errors are aligned to the weights by ID. When a plain
+numeric vector is supplied, errors are assumed to be aligned with the
+weights by position.}
 }
 \value{
 A named numeric vector of weighted error statistics
@@ -18,4 +22,14 @@ A named numeric vector of weighted error statistics
 }
 \description{
 Weighted error statistics
+}
+\details{
+When \code{weights} is a \code{twcv} object it carries IDs, and \code{pointwise_error}
+should be a \code{pe} object so that errors can be aligned by ID. This prevents
+silent misalignment (e.g., when cross-validation predictions are returned in
+fold order rather than the original row order). Positional matching is only
+used when both \code{weights} and \code{pointwise_error} are plain vectors.
+}
+\seealso{
+\code{\link[=calculate_weights]{calculate_weights()}}, \code{\link[=calculate_pointwise_error]{calculate_pointwise_error()}}
 }
