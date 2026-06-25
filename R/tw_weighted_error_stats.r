@@ -2,7 +2,7 @@
 #'
 #' @param weights A `twcv` object, or a numeric vector of weights.
 #' @param pointwise_error Either a `pe` object (from
-#'   [calculate_pointwise_error()], i.e. a data frame with `id` and `error`
+#'   [tw_pointwise_error()], i.e. a data frame with `id` and `error`
 #'   columns) or a numeric vector of pointwise errors (obs - pred). When a `pe`
 #'   object is supplied, errors are aligned to the weights by ID. When a plain
 #'   numeric vector is supplied, errors are assumed to be aligned with the
@@ -18,10 +18,10 @@
 #' @return A named numeric vector of weighted error statistics
 #'   (bias, mse, rmse, mae).
 #'
-#' @seealso [calculate_weights()], [calculate_pointwise_error()]
+#' @seealso [tw_calculate_weights()], [tw_pointwise_error()]
 #'
 #' @export
-weighted_error_stats <- function(
+tw_weighted_error_stats <- function(
   weights,
   pointwise_error
 ) {

@@ -2,7 +2,7 @@
 #'
 #' Computes residuals (obs - pred) for each cross-validation point and returns
 #' them together with their identifiers, so that errors can be safely aligned
-#' with weights from [calculate_weights()] regardless of row ordering.
+#' with weights from [tw_calculate_weights()] regardless of row ordering.
 #'
 #' @param obs Numeric vector of observed values.
 #' @param pred Numeric vector of predicted values.
@@ -18,9 +18,9 @@
 #'     \item{error}{Residual (obs - pred).}
 #'   }
 #'
-#' @seealso [calculate_weights()], [weighted_error_stats()]
+#' @seealso [tw_calculate_weights()], [tw_weighted_error_stats()]
 #' @export
-calculate_pointwise_error <- function(obs, pred, id) {
+tw_pointwise_error <- function(obs, pred, id) {
   if (!is.numeric(obs) || !is.numeric(pred)) {
     stop("`obs` and `pred` must be numeric vectors.")
   }

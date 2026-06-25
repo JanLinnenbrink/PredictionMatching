@@ -4,7 +4,7 @@
 #' @name plot
 #' @param x An object of type \emph{twcv}.
 #' @param pointwise_error Optional. Either a `pe` object (from
-#'   [calculate_pointwise_error()]) or a numeric vector of pointwise errors. If a
+#'   [tw_pointwise_error()]) or a numeric vector of pointwise errors. If a
 #'   numeric vector is supplied, it is assumed to be aligned with the weights by
 #'   position. If a `pe` object is supplied, errors are aligned to the weights by
 #'   ID. If `NULL`, only the calibration plot is returned.

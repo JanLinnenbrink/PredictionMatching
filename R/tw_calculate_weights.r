@@ -46,7 +46,7 @@
 #'
 #' @export
 #'
-calculate_weights <- function(
+tw_calculate_weights <- function(
   tpoints,
   modeldomain = NULL,
   predpoints = NULL,
