@@ -17,6 +17,8 @@
 #'     \item{ids}{Vector of ids for the training points, useful for aligning weights with pointwise errors in weighted_error_stats.}
 #'     \item{unsupported_flag}{1 if some quintiles are not supported by the training data. 0 otherwise.}
 #'     \item{unsupported_vars}{Vector containing the names of variables with quintiles not supported by the training data.}
+#'     \item{ess}{effective sample size.}
+#'     \item{ess_ratio}{Ratio of the effective sample size. Ranges from 0 (weights are highly concentrated) to 1.}
 #'     \item{training_bal}{data.frame containing the discretized predictors for the training data.}
 #'     \item{prediction_margins}{data.frame containing the frequency of the discretized predictors for the prediction data}
 #'   }
@@ -152,11 +154,20 @@ tw_calculate_weights <- function(
     unsupported_flag <- 0
   }
 
+  # Compute the effective sample size
+  ess <- sum(tw$weights)^2 / sum(tw$weights^2)
+  # A low ESS ratio means that a low fraction of training points receive large amounts of weight
+  # This is a sign that the coverage of the joint distribution of the predictors is poor and raking is unreliable
+  # ranges from 0 (concentrated) to 1 (uniform)
+  ess_ratio <- ess / length(tw$weights)
+
   res <- list(
     weights = tw,
     ids = train_dat$id,
     unsupported_flag = unsupported_flag,
     unsupported_vars = unsupported_vars,
+    ess = ess,
+    ess_ratio = ess_ratio,
     training_bal = train_dat_bal_df,
     prediction_margins = prediction_margins
   )

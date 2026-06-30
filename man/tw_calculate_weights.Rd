@@ -39,6 +39,8 @@ A list with elements:
 \item{ids}{Vector of ids for the training points, useful for aligning weights with pointwise errors in weighted_error_stats.}
 \item{unsupported_flag}{1 if some quintiles are not supported by the training data. 0 otherwise.}
 \item{unsupported_vars}{Vector containing the names of variables with quintiles not supported by the training data.}
+\item{ess}{effective sample size.}
+\item{ess_ratio}{Ratio of the effective sample size. Ranges from 0 (weights are highly concentrated) to 1.}
 \item{training_bal}{data.frame containing the discretized predictors for the training data.}
 \item{prediction_margins}{data.frame containing the frequency of the discretized predictors for the prediction data}
 }
