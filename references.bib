@@ -1,0 +1,50 @@
+@misc{Brenning2026,
+	title = {Aligning {Validation} with {Deployment}: {Target}-{Weighted} {Cross}-{Validation} for {Spatial} {Prediction}},
+	copyright = {Creative Commons Attribution 4.0 International},
+	shorttitle = {Aligning {Validation} with {Deployment}},
+	url = {https://arxiv.org/abs/2603.29981},
+	doi = {10.48550/ARXIV.2603.29981},
+	abstract = {Cross-validation (CV) is commonly used to estimate predictive risk when independent test data are unavailable. Its validity depends on the assumption that validation tasks are sampled from the same distribution as prediction tasks encountered during deployment. In spatial prediction and other settings with structured data, this assumption is frequently violated, leading to biased estimates of deployment risk. We propose Target-Weighted CV (TWCV), an estimator of deployment risk that accounts for discrepancies between validation and deployment task distributions, thus accounting for (1) covariate shift and (2) task-difficulty shift. We characterize prediction tasks by descriptors such as covariates and spatial configuration. TWCV assigns weights to validation losses such that the weighted empirical distribution of validation tasks matches the corresponding distribution over a target domain. The weights are obtained via calibration weighting, yielding an importance-weighted estimator that targets deployment risk. Since TWCV requires adequate coverage of the deployment distribution's support, we combine it with spatially buffered resampling that diversifies the task difficulty distribution. In a simulation study, conventional as well as spatial estimators exhibit substantial bias depending on sampling, whereas buffered TWCV remains approximately unbiased across scenarios. A case study in environmental pollution mapping further confirms that discrepancies between validation and deployment task distributions can affect performance assessment, and that buffered TWCV better reflects the prediction task over the target domain. These results establish task distribution mismatch as a primary source of CV bias in spatial prediction and show that calibration weighting combined with a suitable validation task generator provides a viable approach to estimating predictive risk under dataset shift.},
+	urldate = {2026-04-07},
+	publisher = {arXiv},
+	author = {Brenning, Alexander and Suesse, Thomas},
+	year = {2026},
+	note = {Version Number: 1},
+	keywords = {FOS: Computer and information sciences, Machine Learning (cs.LG), Machine Learning (stat.ML), I.2; J.2},
+}
+
+@article{Linnenbrink2024,
+	title = {{kNNDM} {CV}: \textit{k} -fold nearest-neighbour distance matching cross-validation for map accuracy estimation},
+	volume = {17},
+	copyright = {https://creativecommons.org/licenses/by/4.0/},
+	issn = {1991-9603},
+	shorttitle = {{kNNDM} {CV}},
+	url = {https://gmd.copernicus.org/articles/17/5897/2024/},
+	doi = {10.5194/gmd-17-5897-2024},
+	language = {en},
+	number = {15},
+	urldate = {2025-10-14},
+	journal = {Geoscientific Model Development},
+	author = {Linnenbrink, Jan and Milà, Carles and Ludwig, Marvin and Meyer, Hanna},
+	month = aug,
+	year = {2024},
+	pages = {5897--5912},
+}
+
+@Inbook{Meyer2026,
+    author="Meyer, Hanna
+    and Ludwig, Marvin
+    and Mil{\`a}, Carles
+    and Linnenbrink, Jan
+    and Schumacher, Fabian",
+    editor="Rocchini, Duccio",
+    title="The CAST Package for Training and Assessment of Spatial Prediction Models",
+    bookTitle="R Coding for Ecology",
+    year="2026",
+    publisher="Springer Nature Switzerland",
+    address="Cham",
+    pages="247--266",
+    isbn="978-3-031-99665-8",
+    doi="10.1007/978-3-031-99665-8_11",
+    url="https://doi.org/10.1007/978-3-031-99665-8_11"
+}

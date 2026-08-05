@@ -7,7 +7,8 @@
 
 <!-- badges: end -->
 
-The goal of PredictionMatching is to …
+*Experimental*: This is an implementation of weighted evaluation based
+on raking @Brenning2026.
 
 ## Installation
 
@@ -21,33 +22,143 @@ pak::pak("JanLinnenbrink/PredictionMatching")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+We use an example where the sampling effort is biased along a predictor
+included in the model (e.g., towards low elevation) to demonstrate the
+weighing functions implemented in this package:
 
 ``` r
 library(PredictionMatching)
-## basic example code
+library(terra)
+#> terra 1.9.34
+library(sf)
+#> Linking to GEOS 3.14.1, GDAL 3.13.1, PROJ 9.8.1; sf_use_s2() is TRUE
+library(simsam)
+library(caret)
+#> Loading required package: ggplot2
+#> Loading required package: lattice
+library(cowplot)
+
+set.seed(100)
+
+calc_rmse <- function(pred, obs) {
+  sqrt(mean((pred - obs)^2, na.rm = TRUE))
+}
+
+raster_stack <- terra::rast(system.file(
+  "extdata",
+  "rasters_example.tif",
+  package = "PredictionMatching"
+))
+data(train_data)
+
+predictor_names <- setdiff(names(raster_stack), "outcome")
+predictor_stack <- raster_stack[[predictor_names]]
+
+terra::plot(predictor_stack[["elev"]])
+terra::plot(vect(train_data), add = T)
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+<img src="man/figures/README-example-1.png" alt="" width="100%" />
+
+We train a random forest model and assess its performance using kNNDM
+cross-validation @Linnenbrink2024.
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+# Split the data into folds using kNNDM
+knndm_folds <- CAST::knndm(
+  tpoints = train_data,
+  modeldomain = predictor_stack[["elev"]],
+  k = 5
+)
+#> 1000 prediction points are sampled from the modeldomain
+#> Calculating euclidean distances in geographic space (projected coordinates).
+
+# Train a random forest model
+ctrl_knndm <- trainControl(
+  method = "cv",
+  index = knndm_folds$indx_train,
+  indexOut = knndm_folds$indx_test,
+  savePredictions = "final",
+  verboseIter = FALSE
+)
+
+rf_knndm <- train(
+  x = st_drop_geometry(train_data)[, predictor_names],
+  y = st_drop_geometry(train_data)[["outcome"]],
+  method = "ranger",
+  trControl = ctrl_knndm,
+  metric = "RMSE",
+  num.trees = 300,
+  importance = "impurity"
+)
+
+knndm_rmse <- calc_rmse(rf_knndm$pred$pred, rf_knndm$pred$obs)
+
+plot(knndm_folds)
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
+<img src="man/figures/README-unnamed-chunk-2-1.png" alt="" width="100%" />
 
-You can also embed plots, for example:
+We can also calculate the true RMSE in this setting:
 
-<img src="man/figures/README-pressure-1.png" alt="" width="100%" />
+``` r
+rf_pred <- predict(predictor_stack, model = rf_knndm, na.rm = TRUE)
+rf_pred_vals <- terra::values(rf_pred, mat = FALSE)
+outcome_vals <- terra::values(raster_stack$outcome, mat = FALSE)
+true_rmse <- calc_rmse(rf_pred_vals, outcome_vals)
+true_rmse
+#> [1] 5.100987
+knndm_rmse
+#> [1] 4.10525
+```
 
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
+As can be seen by comparing the RMSE estimate obtained by kNNDM to the
+true RMSE, using kNNDM alone is sometimes not sufficient with biased
+sampling. The reason likely is that we applied kNNDM in geographical
+space, and thus could not correct for the biased sampling along
+elevation (and the resulting spatially structured error field). Hence,
+we will weigh the cross-validation errors using raking of the predictors
+in the next step.
+
+After obtaining the weights via `tw_calculate_weights`, we assign the
+pointwise errors calculated from kNNDM to a standardized object with a
+specific ID column using `tw_pointwise_error`. This is necessary because
+`tw_calculate_weights` assigns weigths in the row order of the training
+data, which not necesseraly corresponds to the order of training points
+in the resampling object obtained by caret. This is mitigated by
+assigning row IDs to both, the calculated weights (which is
+automatically done) and to the error object. Then, the weighted error
+can be calculated by `tw_weighted_error_stats`.
+
+``` r
+# Calculate weights from raking
+w <- tw_calculate_weights(
+  tpoints = st_drop_geometry(train_data)[, predictor_names],
+  modeldomain = predictor_stack
+)
+#> 1000 prediction points are sampled from the modeldomain
+#> predictor values are extracted for prediction points
+
+# Standardize the pointwise errors obtained by kNNDM CV and add an ID column
+pe <- tw_pointwise_error(
+  obs = rf_knndm$pred$obs,
+  pred = rf_knndm$pred$pred,
+  id = rf_knndm$pred$rowIndex
+)
+
+# Weigh the pointwise errors using the weights obtained from raking
+weighted_rmse <- tw_weighted_error_stats(w, pe)[["rmse"]]
+
+plot_grid(plotlist = plot(w, pointwise_error = pe), nrow = 1, align = "v")
+```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" alt="" width="100%" />
+
+From the above plot we can already see that points with a higher
+CV-error receive a higher weight, resulting in a higher RMSE:
+
+|               |     RMSE |
+|:--------------|---------:|
+| True RMSE     | 5.100987 |
+| kNNDM RMSE    | 4.105250 |
+| Weighted RMSE | 3.795490 |

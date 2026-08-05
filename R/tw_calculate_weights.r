@@ -42,7 +42,7 @@
 #' terra::plot(predictors_sp[["bio_1"]])
 #' terra::plot(vect(splotdata), add = T)
 #'
-#' w <-calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp)
+#' w <- tw_calculate_weights(tpoints = trainDat[,predictors], modeldomain = predictors_sp)
 #' plot(w)
 #' }
 #'

@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of PredictionMatching is to ...
+*Experimental*: This is an implementation of weighted evaluation based on raking @Brenning2026.
 
 ## Installation
 
@@ -31,25 +31,114 @@ pak::pak("JanLinnenbrink/PredictionMatching")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
-
+We use an example where the sampling effort is biased along a predictor included in the model (e.g., towards low elevation) to demonstrate the weighing functions implemented in this package:
 ```{r example}
 library(PredictionMatching)
-## basic example code
+library(terra)
+library(sf)
+library(simsam)
+library(caret)
+library(cowplot)
+
+set.seed(100)
+
+calc_rmse <- function(pred, obs) {
+  sqrt(mean((pred - obs)^2, na.rm = TRUE))
+}
+
+raster_stack <- terra::rast(system.file(
+  "extdata",
+  "rasters_example.tif",
+  package = "PredictionMatching"
+))
+data(train_data)
+
+predictor_names <- setdiff(names(raster_stack), "outcome")
+predictor_stack <- raster_stack[[predictor_names]]
+
+terra::plot(predictor_stack[["elev"]])
+terra::plot(vect(train_data), add = T)
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
 
-```{r cars}
-summary(cars)
+We train a random forest model and assess its performance using kNNDM cross-validation @Linnenbrink2024.
+```{r}
+# Split the data into folds using kNNDM
+knndm_folds <- CAST::knndm(
+  tpoints = train_data,
+  modeldomain = predictor_stack[["elev"]],
+  k = 5
+)
+
+# Train a random forest model
+ctrl_knndm <- trainControl(
+  method = "cv",
+  index = knndm_folds$indx_train,
+  indexOut = knndm_folds$indx_test,
+  savePredictions = "final",
+  verboseIter = FALSE
+)
+
+rf_knndm <- train(
+  x = st_drop_geometry(train_data)[, predictor_names],
+  y = st_drop_geometry(train_data)[["outcome"]],
+  method = "ranger",
+  trControl = ctrl_knndm,
+  metric = "RMSE",
+  num.trees = 300,
+  importance = "impurity"
+)
+
+knndm_rmse <- calc_rmse(rf_knndm$pred$pred, rf_knndm$pred$obs)
+
+plot(knndm_folds)
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+We can also calculate the true RMSE in this setting:
 
-You can also embed plots, for example:
+```{r}
+rf_pred <- predict(predictor_stack, model = rf_knndm, na.rm = TRUE)
+rf_pred_vals <- terra::values(rf_pred, mat = FALSE)
+outcome_vals <- terra::values(raster_stack$outcome, mat = FALSE)
+true_rmse <- calc_rmse(rf_pred_vals, outcome_vals)
+true_rmse
+knndm_rmse
+```
+
+As can be seen by comparing the RMSE estimate obtained by kNNDM to the true RMSE, using kNNDM alone is sometimes not sufficient with biased sampling. The reason likely is that we applied kNNDM in geographical space, and thus could not correct for the biased sampling along elevation (and the resulting spatially structured error field). Hence, we will weigh the cross-validation errors using raking of the predictors in the next step. 
+
+After obtaining the weights via `tw_calculate_weights`, we assign the pointwise errors calculated from kNNDM to a standardized object with a specific ID column using `tw_pointwise_error`. This is necessary because `tw_calculate_weights` assigns weigths in the row order of the training data, which not necesseraly corresponds to the order of training points in the resampling object obtained by caret. This is mitigated by assigning row IDs to both, the calculated weights (which is automatically done) and to the error object. Then, the weighted error can be calculated by `tw_weighted_error_stats`.
+
+```{r}
+# Calculate weights from raking
+w <- tw_calculate_weights(
+  tpoints = st_drop_geometry(train_data)[, predictor_names],
+  modeldomain = predictor_stack
+)
+
+# Standardize the pointwise errors obtained by kNNDM CV and add an ID column
+pe <- tw_pointwise_error(
+  obs = rf_knndm$pred$obs,
+  pred = rf_knndm$pred$pred,
+  id = rf_knndm$pred$rowIndex
+)
+
+# Weigh the pointwise errors using the weights obtained from raking
+weighted_rmse <- tw_weighted_error_stats(w, pe)[["rmse"]]
+
+plot_grid(plotlist = plot(w, pointwise_error = pe), nrow = 1, align = "v")
+```
+
+From the above plot we can already see that points with a higher CV-error receive a higher weight, resulting in a higher RMSE:
 
 ```{r pressure, echo = FALSE}
-plot(pressure)
+knitr::kable(data.frame(
+  RMSE = c(true_rmse, knndm_rmse, weighted_rmse),
+  row.names = c(
+    "True RMSE",
+    "kNNDM RMSE",
+    "Weighted RMSE"
+  )
+))
 ```
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
