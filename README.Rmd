@@ -1,5 +1,6 @@
 ---
 output: github_document
+bibliography: references.bib
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -18,7 +19,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-*Experimental*: This is an implementation of weighted evaluation based on raking @Brenning2026.
+*Experimental*: This is an implementation of weighted evaluation based on raking (@Brenning2026).
 
 ## Installation
 
@@ -61,7 +62,7 @@ terra::plot(vect(train_data), add = T)
 ```
 
 
-We train a random forest model and assess its performance using kNNDM cross-validation @Linnenbrink2024.
+We train a random forest model and assess its performance using kNNDM cross-validation (@Linnenbrink2024).
 ```{r}
 # Split the data into folds using kNNDM
 knndm_folds <- CAST::knndm(
@@ -107,9 +108,9 @@ knndm_rmse
 
 As can be seen by comparing the RMSE estimate obtained by kNNDM to the true RMSE, using kNNDM alone is sometimes not sufficient with biased sampling. The reason likely is that we applied kNNDM in geographical space, and thus could not correct for the biased sampling along elevation (and the resulting spatially structured error field). Hence, we will weigh the cross-validation errors using raking of the predictors in the next step. 
 
-After obtaining the weights via `tw_calculate_weights`, we assign the pointwise errors calculated from kNNDM to a standardized object with a specific ID column using `tw_pointwise_error`. This is necessary because `tw_calculate_weights` assigns weigths in the row order of the training data, which not necesseraly corresponds to the order of training points in the resampling object obtained by caret. This is mitigated by assigning row IDs to both, the calculated weights (which is automatically done) and to the error object. Then, the weighted error can be calculated by `tw_weighted_error_stats`.
+After obtaining the weights via `tw_calculate_weights`, we assign the pointwise errors calculated from kNNDM to a standardized object with a specific ID column using `tw_pointwise_error`. This is necessary because `tw_calculate_weights` assigns weigths in the row order of the training data, which not necessarily corresponds to the order of training points in the resampling object obtained by caret. This is mitigated by assigning row IDs to both, the calculated weights (which is automatically done) and to the error object. Then, the weighted error can be calculated by `tw_weighted_error_stats`.
 
-```{r}
+```{r, fig.height=5, fig.width=12}
 # Calculate weights from raking
 w <- tw_calculate_weights(
   tpoints = st_drop_geometry(train_data)[, predictor_names],
@@ -126,10 +127,15 @@ pe <- tw_pointwise_error(
 # Weigh the pointwise errors using the weights obtained from raking
 weighted_rmse <- tw_weighted_error_stats(w, pe)[["rmse"]]
 
-plot_grid(plotlist = plot(w, pointwise_error = pe), nrow = 1, align = "v")
+plot_grid(
+  plotlist = plot(w, pointwise_error = pe),
+  nrow = 1,
+  align = "v",
+  labels = c("A", "B")
+)
 ```
 
-From the above plot we can already see that points with a higher CV-error receive a higher weight, resulting in a higher RMSE:
+From panel B of the above plot we can already see that points with a higher CV-error receive a higher weight, resulting in a higher RMSE which gets closer to the true RMSE:
 
 ```{r pressure, echo = FALSE}
 knitr::kable(data.frame(

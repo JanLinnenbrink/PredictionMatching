@@ -34,8 +34,7 @@ plot.twcv <- function(x, pointwise_error = NULL, ...) {
     ggplot2::scale_fill_viridis_d("Quintile", option = 5) +
     ggplot2::labs(
       y = "",
-      x = "abs(target proportion - weighted training proportion)",
-      title = "A)  Margin calibration"
+      x = "abs(target proportion - weighted training proportion)"
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(
@@ -62,12 +61,11 @@ plot.twcv <- function(x, pointwise_error = NULL, ...) {
       method = "lm",
       formula = y ~ x,
       se = FALSE,
-      colour = "firebrick"
+      colour = "blue"
     ) +
     ggplot2::labs(
       x = "Weight",
-      y = "Pointwise loss (absolute error)",
-      title = "B) Weight vs. loss"
+      y = "Residuals"
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(

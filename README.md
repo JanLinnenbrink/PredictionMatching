@@ -8,7 +8,7 @@
 <!-- badges: end -->
 
 *Experimental*: This is an implementation of weighted evaluation based
-on raking @Brenning2026.
+on raking (Brenning and Suesse (2026)).
 
 ## Installation
 
@@ -61,7 +61,7 @@ terra::plot(vect(train_data), add = T)
 <img src="man/figures/README-example-1.png" alt="" width="100%" />
 
 We train a random forest model and assess its performance using kNNDM
-cross-validation @Linnenbrink2024.
+cross-validation (Linnenbrink et al. (2024)).
 
 ``` r
 # Split the data into folds using kNNDM
@@ -107,9 +107,9 @@ rf_pred_vals <- terra::values(rf_pred, mat = FALSE)
 outcome_vals <- terra::values(raster_stack$outcome, mat = FALSE)
 true_rmse <- calc_rmse(rf_pred_vals, outcome_vals)
 true_rmse
-#> [1] 5.100987
+#> [1] 7.660114
 knndm_rmse
-#> [1] 4.10525
+#> [1] 6.646014
 ```
 
 As can be seen by comparing the RMSE estimate obtained by kNNDM to the
@@ -124,7 +124,7 @@ After obtaining the weights via `tw_calculate_weights`, we assign the
 pointwise errors calculated from kNNDM to a standardized object with a
 specific ID column using `tw_pointwise_error`. This is necessary because
 `tw_calculate_weights` assigns weigths in the row order of the training
-data, which not necesseraly corresponds to the order of training points
+data, which not necessarily corresponds to the order of training points
 in the resampling object obtained by caret. This is mitigated by
 assigning row IDs to both, the calculated weights (which is
 automatically done) and to the error object. Then, the weighted error
@@ -149,16 +149,44 @@ pe <- tw_pointwise_error(
 # Weigh the pointwise errors using the weights obtained from raking
 weighted_rmse <- tw_weighted_error_stats(w, pe)[["rmse"]]
 
-plot_grid(plotlist = plot(w, pointwise_error = pe), nrow = 1, align = "v")
+plot_grid(
+  plotlist = plot(w, pointwise_error = pe),
+  nrow = 1,
+  align = "v",
+  labels = c("A", "B")
+)
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" alt="" width="100%" />
 
-From the above plot we can already see that points with a higher
-CV-error receive a higher weight, resulting in a higher RMSE:
+From panel B of the above plot we can already see that points with a
+higher CV-error receive a higher weight, resulting in a higher RMSE
+which gets closer to the true RMSE:
 
 |               |     RMSE |
 |:--------------|---------:|
-| True RMSE     | 5.100987 |
-| kNNDM RMSE    | 4.105250 |
-| Weighted RMSE | 3.795490 |
+| True RMSE     | 7.660114 |
+| kNNDM RMSE    | 6.646014 |
+| Weighted RMSE | 7.491875 |
+
+<div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-Brenning2026" class="csl-entry">
+
+Brenning, Alexander, and Thomas Suesse. 2026. *Aligning Validation with
+Deployment: Target-Weighted Cross-Validation for Spatial Prediction*.
+arXiv. <https://doi.org/10.48550/ARXIV.2603.29981>.
+
+</div>
+
+<div id="ref-Linnenbrink2024" class="csl-entry">
+
+Linnenbrink, Jan, Carles Milà, Marvin Ludwig, and Hanna Meyer. 2024.
+“<span class="nocase">kNNDM</span> CV: *K* -Fold Nearest-Neighbour
+Distance Matching Cross-Validation for Map Accuracy Estimation.”
+*Geoscientific Model Development* 17 (15): 5897–912.
+<https://doi.org/10.5194/gmd-17-5897-2024>.
+
+</div>
+
+</div>
