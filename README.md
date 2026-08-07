@@ -7,8 +7,11 @@
 
 <!-- badges: end -->
 
-*Experimental*: This is an implementation of weighted evaluation based
-on raking (Brenning and Suesse (2026)).
+**PredictionMatching** provides weighted evaluation for cross-validation
+using raking when training data are sampled non-representatively.
+
+> *Experimental*: This is an implementation of weighted evaluation based
+> on raking (Brenning and Suesse (2026)).
 
 ## Installation
 
@@ -22,20 +25,18 @@ pak::pak("JanLinnenbrink/PredictionMatching")
 
 ## Example
 
+### Data and setup
+
 We use an example where the sampling effort is biased along a predictor
 included in the model (e.g., towards low elevation) to demonstrate the
-weighing functions implemented in this package:
+weighting functions implemented in this package:
 
 ``` r
 library(PredictionMatching)
 library(terra)
-#> terra 1.9.34
 library(sf)
-#> Linking to GEOS 3.14.1, GDAL 3.13.1, PROJ 9.8.1; sf_use_s2() is TRUE
 library(simsam)
 library(caret)
-#> Loading required package: ggplot2
-#> Loading required package: lattice
 library(cowplot)
 
 set.seed(100)
@@ -60,6 +61,8 @@ terra::plot(vect(train_data), add = T)
 
 <img src="man/figures/README-example-1.png" alt="" width="100%" />
 
+### kNNDM cross-validation
+
 We train a random forest model and assess its performance using kNNDM
 cross-validation (Linnenbrink et al. (2024)).
 
@@ -71,7 +74,6 @@ knndm_folds <- CAST::knndm(
   k = 5
 )
 #> 1000 prediction points are sampled from the modeldomain
-#> Calculating euclidean distances in geographic space (projected coordinates).
 
 # Train a random forest model
 ctrl_knndm <- trainControl(
@@ -99,6 +101,8 @@ plot(knndm_folds)
 
 <img src="man/figures/README-unnamed-chunk-2-1.png" alt="" width="100%" />
 
+### True RMSE and RMSE from geographic kNNDM
+
 We can also calculate the true RMSE in this setting:
 
 ``` r
@@ -114,21 +118,23 @@ knndm_rmse
 
 As can be seen by comparing the RMSE estimate obtained by kNNDM to the
 true RMSE, using kNNDM alone is sometimes not sufficient with biased
-sampling. The reason likely is that we applied kNNDM in geographical
-space, and thus could not correct for the biased sampling along
-elevation (and the resulting spatially structured error field). Hence,
-we will weigh the cross-validation errors using raking of the predictors
-in the next step.
+sampling. This happens because kNNDM was applied in geographic space and
+does not necessarily correct the sampling bias along elevation. To
+correct for this, we can use raking to obtain weights that correct for
+the sampling bias along elevation.
 
-After obtaining the weights via `tw_calculate_weights`, we assign the
-pointwise errors calculated from kNNDM to a standardized object with a
-specific ID column using `tw_pointwise_error`. This is necessary because
-`tw_calculate_weights` assigns weigths in the row order of the training
-data, which not necessarily corresponds to the order of training points
-in the resampling object obtained by caret. This is mitigated by
-assigning row IDs to both, the calculated weights (which is
-automatically done) and to the error object. Then, the weighted error
-can be calculated by `tw_weighted_error_stats`.
+This process requires three steps: (1) calculate weights via
+`tw_calculate_weights()`, (2) compute pointwise cross-validation errors
+via `tw_pointwise_error()`, and (3) compute the weighted RMSE via
+`tw_weighted_error_stats()`. First, we calculate weights via raking
+using `tw_calculate_weights()`. This function takes the training data
+and the predictor stack as input and returns a vector of weights that
+correct for the sampling bias along the specified predictors. After
+obtaining weights via `tw_calculate_weights()`, we compute pointwise
+cross-validation errors with `tw_pointwise_error()`. This preserves the
+original row IDs so that errors can be aligned correctly with weights
+even when caret reorders resampling rows. Finally,
+`tw_weighted_error_stats()` computes the weighted RMSE.
 
 ``` r
 # Calculate weights from raking
@@ -168,6 +174,8 @@ which gets closer to the true RMSE:
 | True RMSE     | 7.660114 |
 | kNNDM RMSE    | 6.646014 |
 | Weighted RMSE | 7.491875 |
+
+## References
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 
