@@ -4,9 +4,9 @@
 \name{PredictionMatching-package}
 \alias{PredictionMatching}
 \alias{PredictionMatching-package}
-\title{PredictionMatching: What the Package Does (One Line, Title Case)}
+\title{PredictionMatching: Prediction-domain Adaptive Weighting for Cross-Validation Evaluation}
 \description{
-What the package does (one paragraph).
+Implements prediction-domain adaptive weighting via raking to reduce evaluation bias from preferential training samples. The method reweights cross-validation errors so they better reflect the target prediction domain's properties, supporting more accurate spatial machine learning model evaluation (Brenning and Suesse 2026 <10.48550/ARXIV.2603.29981>).
 }
 \seealso{
 Useful links:
@@ -17,11 +17,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com}
+\strong{Maintainer}: Jan Linnenbrink \email{jan.linnenbrink@uni-muenster.de}
 
 Authors:
 \itemize{
-  \item First Last \email{first.last@example.com}
+  \item Jan Linnenbrink \email{jan.linnenbrink@uni-muenster.de}
 }
 
 }

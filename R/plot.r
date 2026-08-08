@@ -11,6 +11,7 @@
 #' @param ... other arguments.
 #' @author Jan Linnenbrink
 #'
+#' @importFrom rlang .data
 #' @export
 plot.twcv <- function(x, pointwise_error = NULL, ...) {
   w_list <- x$weights

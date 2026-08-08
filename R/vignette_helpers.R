@@ -16,7 +16,7 @@ generate_rast <- function() {
   grad_predictors <- simsam::sim_covariates(
     rast_grid,
     n = 7,
-    method = simulate_gaussian(
+    method = simsam::simulate_gaussian(
       nugget = 0,
       beta = 50,
       psill = 100,
@@ -31,7 +31,7 @@ generate_rast <- function() {
   landcover <- simsam::sim_covariates(
     rast_grid,
     n = 2,
-    method = simulate_gaussian(
+    method = simsam::simulate_gaussian(
       psill = 5,
       model = "Exp",
       range = 100,
@@ -73,7 +73,7 @@ generate_rast <- function() {
   noise <- simsam::sim_covariates(
     rast_grid,
     n = 1,
-    method = simulate_gaussian(psill = 10, model = "Exp", range = 5)
+    method = simsam::simulate_gaussian(psill = 10, model = "Exp", range = 5)
   )
   names(noise) <- "noise"
   outcome <- outcome_signal + noise
@@ -90,7 +90,7 @@ generate_elevation <- function(rast_grid) {
   # Helper: standardize raster values
   standardize_raster <- function(x) {
     v <- terra::values(x)[, 1]
-    values(x) <- as.numeric(scale(v))
+    terra::values(x) <- as.numeric(scale(v))
     x
   }
 
@@ -103,7 +103,7 @@ generate_elevation <- function(rast_grid) {
   broad_elev <- simsam::sim_covariates(
     rast_grid,
     n = 1,
-    method = simulate_gaussian(
+    method = simsam::simulate_gaussian(
       psill = 2,
       model = "Exp",
       range = 80
@@ -114,7 +114,7 @@ generate_elevation <- function(rast_grid) {
   rough_elev <- simsam::sim_covariates(
     rast_grid,
     n = 1,
-    method = simulate_gaussian(
+    method = simsam::simulate_gaussian(
       psill = 2,
       model = "Exp",
       range = 10
@@ -125,7 +125,7 @@ generate_elevation <- function(rast_grid) {
   trend_vals <- 0.6 * x + 0.4 * y
 
   trend <- rast_grid
-  values(trend) <- trend_vals
+  terra::values(trend) <- trend_vals
 
   # 4. Optional mountain massif
   mountain_vals <- exp(
@@ -133,13 +133,13 @@ generate_elevation <- function(rast_grid) {
   )
 
   mountain <- rast_grid
-  values(mountain) <- mountain_vals
+  terra::values(mountain) <- mountain_vals
 
   # 5. Optional lowland / valley
   valley_vals <- exp(-((y - 35)^2) / (2 * 25^2))
 
   valley <- rast_grid
-  values(valley) <- valley_vals
+  terra::values(valley) <- valley_vals
 
   # Combine components
   elev <-
