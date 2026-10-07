@@ -7,8 +7,10 @@
 
 <!-- badges: end -->
 
-**PredictionMatching** provides weighted evaluation for cross-validation
-using raking when training data are sampled non-representatively.
+**PredictionMatching** reweights cross-validation errors using raking so
+that evaluation better reflects the predictor conditions in a prediction
+domain. This is done based on the cross-validation predictions supplied
+by the user.
 
 > *Experimental*: This is an implementation of weighted evaluation based
 > on raking (Brenning and Suesse (2026)).
@@ -35,9 +37,7 @@ weighting functions implemented in this package:
 library(PredictionMatching)
 library(terra)
 library(sf)
-library(simsam)
 library(caret)
-library(cowplot)
 
 set.seed(100)
 
@@ -123,17 +123,19 @@ does not necessarily correct the sampling bias along elevation. To
 correct for this, we can use raking to obtain weights that correct for
 the sampling bias along elevation.
 
-This process requires three steps: (1) calculate weights via
-`tw_calculate_weights()`, (2) compute pointwise cross-validation errors
-via `tw_pointwise_error()`, and (3) compute the weighted RMSE via
-`tw_weighted_error_stats()`. First, we calculate weights via raking
-using `tw_calculate_weights()`. This function takes the training data
-and the predictor stack as input and returns a vector of weights that
-correct for the sampling bias along the specified predictors. After
-obtaining weights via `tw_calculate_weights()`, we compute pointwise
-cross-validation errors with `tw_pointwise_error()`. This preserves the
-original row IDs so that errors can be aligned correctly with weights
-even when caret reorders resampling rows. Finally,
+The workflow has three steps:
+
+1.  calculate weights with `tw_calculate_weights()`,
+2.  create pointwise errors with `tw_pointwise_error()`, and
+3.  calculate weighted metrics with `tw_weighted_error_stats()`.
+
+First, weights are calculated from the predictor values of the
+evaluation points in `train_data`. Each weight corresponds to a row in
+that data. After obtaining weights via `tw_calculate_weights()`, we
+compute pointwise cross-validation errors with `tw_pointwise_error()`.
+In caret’s cross-validation results, `rowIndex` identifies the original
+data row for each prediction, allowing its error to be matched to the
+weight calculated from that row’s predictors. Finally,
 `tw_weighted_error_stats()` computes the weighted RMSE.
 
 ``` r
@@ -155,7 +157,7 @@ pe <- tw_pointwise_error(
 # Weigh the pointwise errors using the weights obtained from raking
 weighted_rmse <- tw_weighted_error_stats(w, pe)[["rmse"]]
 
-plot_grid(
+cowplot::plot_grid(
   plotlist = plot(w, pointwise_error = pe),
   nrow = 1,
   align = "v",
@@ -165,9 +167,10 @@ plot_grid(
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" alt="" width="100%" />
 
-From panel B of the above plot we can already see that points with a
-higher CV-error receive a higher weight, resulting in a higher RMSE
-which gets closer to the true RMSE:
+Panel B shows the relationship between the weights and absolute CV
+errors. Weights are determined by predictor balance, not by the errors
+themselves, resulting in a higher RMSE which gets closer to the true
+RMSE:
 
 |               |     RMSE |
 |:--------------|---------:|
